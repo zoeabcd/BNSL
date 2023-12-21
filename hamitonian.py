@@ -1,6 +1,8 @@
 from sympy import *
 from data_score import powerset, omega
 import numpy as np
+import heapq
+from operator import itemgetter
 
 def H_subscore(i, n, m, D, d, y, r):
     res = 0
@@ -50,8 +52,6 @@ def H_trans(n, delta_trans, d, y, r):
             for k in range(j+1, n):
                 idx_ik = int(i*(n-1) - i*(i+1)/2 + k - 1)
                 idx_jk = int(j*(n-1) - j*(j+1)/2 + k - 1)
-                # print(i, j, k, n)
-                # print(idx_ij, idx_ik, idx_jk)
                 res += delta_trans * \
                     (r[idx_ik] + r[idx_ij] * r[idx_jk] \
                       - r[idx_ij]*r[idx_ik] - r[idx_jk]*r[idx_ik])
@@ -95,16 +95,37 @@ def hamitonian_para(n, m, D, delta_max, delta_cons, delta_trans):
     for i in range(n):
         for j in range(n):
             res = res.subs({d[i, j] ** 2 : d[i, j]})
-            res = res.subs({d[i, j] : (d[i, j]+1)/2})
 
     for i in range(n):
         for j in range(2):
             res = res.subs({y[i, j] ** 2 : y[i, j]})
+
+    res = simplify(expand(res))
+    print("Before spin transformation:", res)
+
+    bf_results = {}
+    for x in range(1 << 7):
+        origx = x
+        res2 = res.copy()
+        for i in range(7):
+            res2 = res2.subs({num_to_symbol(i, n, d, y, r): x & 1})
+            x >>= 1
+        res2 = simplify(expand(res2))
+        bf_results["{:07b}".format(origx)] = float(res2)
+    print("Brute force results:", dict(heapq.nsmallest(5, bf_results.items(), key=itemgetter(1))))
+
+    for i in range(n):
+        for j in range(n):
+            # res = res.subs({d[i, j] ** 2 : d[i, j]})
+            res = res.subs({d[i, j] : (d[i, j]+1)/2})
+
+    for i in range(n):
+        for j in range(2):
+            # res = res.subs({y[i, j] ** 2 : y[i, j]})
             res = res.subs({y[i, j] : (y[i, j]+1)/2})
 
     for i in range(int(n*(n-1)/2)):
         res = res.subs({r[i] : (r[i]+1)/2})
-
     res = simplify(expand(res))
 
     N = int(3*n*(n-1)/2 + 2*n)

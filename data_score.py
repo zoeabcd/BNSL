@@ -51,7 +51,7 @@ def Generate_Data(n, M = 200):
         for idx in range(M):
             if random.uniform(0, 1) > 0.5:
                 D[idx, 0] = 1
-                if random.uniform(0, 1) > 0.9:
+                if random.uniform(0, 1) > 0.5:
                         D[idx, 1] = 1
     elif n == 4:
         for idx in range(M):
@@ -63,22 +63,17 @@ def Generate_Data(n, M = 200):
                         D[idx, 2] = 1
                         if random.uniform(0, 1) > 0.9:
                             D[idx, 3] = 1
-
     return D
 
 def powerset(J):
-    l = len(J)
-    if(l == 1):
-        return [J]
+    if len(J) == 0:
+        return [[]]
     sub_J = J[1:]
     sub_ps = powerset(sub_J)
-    res = [[J[0]]]
-    res = res + sub_ps
+    res = sub_ps.copy()
     for sub in sub_ps:
         res.append([J[0]] + sub)
     return res
-
-
 
 def omega(i, J, D):
     p_set = powerset(J)
