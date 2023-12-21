@@ -1,6 +1,6 @@
 from qiskit import transpile
 from qiskit_aer import AerSimulator
-from hamitonian import hamitonian_para
+from hamiltonian import hamiltonian_para
 from qannealing import annealing
 from data_score import Generate_Data
 import heapq
@@ -16,7 +16,7 @@ delta_max = 100
 delta_cons = 100
 delta_trans = 100
 
-C, h, J = hamitonian_para(n, m, D, delta_max, \
+C, h, J = hamiltonian_para(n, m, D, delta_max, \
                            delta_cons, delta_trans)
 print(h)
 print(J)

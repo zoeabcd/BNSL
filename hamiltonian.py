@@ -74,7 +74,7 @@ def num_to_symbol(num, n, d, y, r):
         return y[i, j]
 
 
-def hamitonian_para(n, m, D, delta_max, delta_cons, delta_trans):
+def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
     d = MatrixSymbol("d", n, n)
     y = MatrixSymbol("y", n, 2)
     r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
