@@ -103,11 +103,13 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
     res = simplify(expand(res))
     print("Before spin transformation:", res)
 
+    N = int(3*n*(n-1)/2 + 2*n)
+
     bf_results = {}
-    for x in range(1 << 7):
+    for x in range(1 << N):
         origx = x
         res2 = res.copy()
-        for i in range(7):
+        for i in range(N):
             res2 = res2.subs({num_to_symbol(i, n, d, y, r): x & 1})
             x >>= 1
         res2 = simplify(expand(res2))
@@ -128,7 +130,6 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
         res = res.subs({r[i] : (r[i]+1)/2})
     res = simplify(expand(res))
 
-    N = int(3*n*(n-1)/2 + 2*n)
     C = 0
     h = np.zeros(N)
     J = np.zeros((N, N))
