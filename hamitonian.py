@@ -1,12 +1,12 @@
 from sympy import *
-from data_score import powerset, omega
+from data_score import non_empty_powerset, omega
 import numpy as np
 
 def H_subscore(i, n, m, D, d, y, r):
     res = 0
     tmp = list(range(n))
     del tmp[i]
-    possible_parent_sets = powerset(tmp)
+    possible_parent_sets = non_empty_powerset(tmp)
     for J in possible_parent_sets:
         if len(J) > m: continue 
         tmp = 1

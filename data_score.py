@@ -66,12 +66,12 @@ def Generate_Data(n, M = 200):
 
     return D
 
-def powerset(J):
+def non_empty_powerset(J):
     l = len(J)
     if(l == 1):
         return [J]
     sub_J = J[1:]
-    sub_ps = powerset(sub_J)
+    sub_ps = non_empty_powerset(sub_J)
     res = [[J[0]]]
     res = res + sub_ps
     for sub in sub_ps:
@@ -81,9 +81,10 @@ def powerset(J):
 
 
 def omega(i, J, D):
-    p_set = powerset(J)
+    p_set = non_empty_powerset(J)
     L = len(J)
     res = 0
+    # res += subscore(i,[],D)
     for K in p_set:
         tmp = L - len(K)
         if tmp % 2 == 0:
