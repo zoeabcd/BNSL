@@ -87,11 +87,11 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
 
     for i in range(n):
         for j in range(n):
-            res = res.subs({d[:,:] ** 2 : d[:,:]})
+            res = res.subs({d[i,j] ** 2 : d[:,:]})
     
     for i in range(n):
         for j in range(2):
-            res = res.subs({y[:,:] ** 2 : y[:,:]})
+            res = res.subs({y[i,j] ** 2 : y[:,:]})
 
     # res = res.subs({d[:,:] ** 2 : d[:,:]})
     # res = res.subs({y[:,:] ** 2 : y[:,:]})
