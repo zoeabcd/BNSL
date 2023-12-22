@@ -9,7 +9,7 @@ from operator import itemgetter
 M = 100
 T = 10
 lamda = 1
-n = 2
+n = 3
 m = 1
 D = Generate_Data(n)
 delta_max = 100

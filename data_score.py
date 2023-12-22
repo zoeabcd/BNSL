@@ -22,10 +22,12 @@ def subscore(i, K, D):
     N = Get_Data_Count(i, qi, K, D)
     # N[i, j, k] = # of instance that Xi in k, K is in j (0-3 in this example) and for simplicity, omit i here.
     for j in range(qi):
-        tmp = np.math.factorial(int(N[j, 0] + N[j, 1] + 1)) / \
-            np.math.factorial(int(N[j, 0])) / \
-            np.math.factorial(int(N[j, 1]))
-        res += np.log((tmp))
+        for k in range(1, int(N[j, 0] + N[j, 1] + 1) + 1):
+            res += np.log(k)
+        for k in range(1, int(N[j, 0]) + 1):
+            res -= np.log(k)
+        for k in range(1, int(N[j, 1]) + 1):
+            res -= np.log(k)
     return res
 
 def score(G, D, n):

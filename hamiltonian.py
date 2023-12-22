@@ -1,8 +1,20 @@
 from sympy import *
-from data_score import powerset, omega
+from data_score import powerset, omega, subscore
 import numpy as np
 import heapq
 from operator import itemgetter
+from tqdm import tqdm
+
+def dist(i, n, J, d):
+    st = set(J)
+    res = n - 1
+    for j in range(n):
+        if j == i: continue
+        if j in st:
+            res -= d[j, i]
+        else:
+            res -= (1 - d[j, i])
+    return res
 
 def H_subscore(i, n, m, D, d, y, r):
     res = 0
@@ -10,11 +22,13 @@ def H_subscore(i, n, m, D, d, y, r):
     del tmp[i]
     possible_parent_sets = powerset(tmp)
     for J in possible_parent_sets:
-        if len(J) > m: continue 
-        tmp = 1
-        for j in J:
-            tmp *= d[j, i]
-        res += omega(i, J, D) * tmp
+        if len(J) > m: continue
+        res += subscore(i, J, D) * ((n - 1) / 2 - dist(i, n, J, d))
+        # if len(J) > m: continue 
+        # tmp = 1
+        # for j in J:
+        #     tmp *= d[j, i]
+        # res += omega(i, J, D) * tmp
     res = simplify(expand(res))
     return res
 
@@ -87,14 +101,11 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
 
     for i in range(n):
         for j in range(n):
-            res = res.subs({d[i,j] ** 2 : d[:,:]})
-    
+            res = res.subs({d[i, j] ** 2 : d[i, j]})
+
     for i in range(n):
         for j in range(2):
-            res = res.subs({y[i,j] ** 2 : y[:,:]})
-
-    # res = res.subs({d[:,:] ** 2 : d[:,:]})
-    # res = res.subs({y[:,:] ** 2 : y[:,:]})
+            res = res.subs({y[i, j] ** 2 : y[i, j]})
 
     res = simplify(expand(res))
     print("Before spin transformation:", res)
@@ -102,7 +113,7 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
     N = int(3*n*(n-1)/2 + 2*n)
 
     bf_results = {}
-    for x in range(1 << N):
+    for x in tqdm(range(1 << N)):
         origx = x
         res2 = res.copy()
         for i in range(N):
@@ -115,17 +126,13 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
     for i in range(n):
         for j in range(n):
             res = res.subs({d[i, j] : (d[i, j]+1)/2})
-    
+
     for i in range(n):
         for j in range(2):
             res = res.subs({y[i, j] : (y[i, j]+1)/2})
-    
+
     for i in range(int(n*(n-1)/2)):
         res = res.subs({r[i] : (r[i]+1)/2})
-
-    # res = res.subs({d[:, :] : (d[:, :]+1)/2})
-    # res = res.subs({y[:, :] : (y[:, :]+1)/2})
-    # res = res.subs({r[:] : (r[:]+1)/2})
     
     res = simplify(expand(res))
 
