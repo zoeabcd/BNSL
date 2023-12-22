@@ -85,20 +85,8 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
             H_trans(n, delta_trans, d, y, r)
     res = simplify(expand(res))
 
-    # res = res.subs({d[:,:] ** 2 : d[:,:]})
-    # res = res.subs({y[:,:] ** 2 : y[:,:]})
-
-    # res = res.subs({d[:, :] : (d[:, :]+1)/2})
-    # res = res.subs({y[:, :] : (y[:, :]+1)/2})
-    # res = res.subs({r[:] : (r[:]+1)/2})
-
-    for i in range(n):
-        for j in range(n):
-            res = res.subs({d[i, j] ** 2 : d[i, j]})
-
-    for i in range(n):
-        for j in range(2):
-            res = res.subs({y[i, j] ** 2 : y[i, j]})
+    res = res.subs({d[:,:] ** 2 : d[:,:]})
+    res = res.subs({y[:,:] ** 2 : y[:,:]})
 
     res = simplify(expand(res))
     print("Before spin transformation:", res)
@@ -116,18 +104,10 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
         bf_results["{:07b}".format(origx)] = float(res2)
     print("Brute force results:", dict(heapq.nsmallest(5, bf_results.items(), key=itemgetter(1))))
 
-    for i in range(n):
-        for j in range(n):
-            # res = res.subs({d[i, j] ** 2 : d[i, j]})
-            res = res.subs({d[i, j] : (d[i, j]+1)/2})
-
-    for i in range(n):
-        for j in range(2):
-            # res = res.subs({y[i, j] ** 2 : y[i, j]})
-            res = res.subs({y[i, j] : (y[i, j]+1)/2})
-
-    for i in range(int(n*(n-1)/2)):
-        res = res.subs({r[i] : (r[i]+1)/2})
+    res = res.subs({d[:, :] : (d[:, :]+1)/2})
+    res = res.subs({y[:, :] : (y[:, :]+1)/2})
+    res = res.subs({r[:] : (r[:]+1)/2})
+    
     res = simplify(expand(res))
 
     C = 0
