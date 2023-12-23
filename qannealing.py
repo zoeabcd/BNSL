@@ -1,5 +1,8 @@
-from qiskit import  QuantumCircuit, QuantumRegister
+from qiskit import  QuantumCircuit, QuantumRegister, transpile
 from qiskit.circuit.library import RXGate, RZZGate, RZGate
+from qiskit_aer import AerSimulator
+from hamiltonian import hamiltonian_para
+from data_score import Generate_Data, score
 
 def At(t, T):
     return(1- t/T)
