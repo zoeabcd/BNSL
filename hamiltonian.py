@@ -4,6 +4,7 @@ import numpy as np
 import heapq
 from operator import itemgetter
 from tqdm import tqdm
+import itertools
 
 def dist(i, n, J, d):
     st = set(J)
@@ -14,6 +15,22 @@ def dist(i, n, J, d):
             res -= d[j, i]
         else:
             res -= (1 - d[j, i])
+    return res
+
+def H_subscore(i, n, m, D, d, y, r):
+    res = 0
+    tmp = list(range(n))
+    del tmp[i]
+    possible_parent_sets = powerset(tmp)
+    for J in possible_parent_sets:
+        if len(J) > m: continue
+        res += subscore(i, J, D) * ((n - 1) / 2 - dist(i, n, J, d))
+        # if len(J) > m: continue 
+        # tmp = 1
+        # for j in J:
+        #     tmp *= d[j, i]
+        # res += omega(i, J, D) * tmp
+    res = simplify(expand(res))
     return res
 
 def H_subscore_onelocal(i, n, m, D, d, y, r):
@@ -27,6 +44,13 @@ def H_subscore_onelocal(i, n, m, D, d, y, r):
     res = simplify(expand(res))
     return res
 
+def H_score(n, m, D, d, y, r):
+    res = 0
+    for i in range(n):
+        res += H_subscore(i, n, m, D, d, y, r)
+    res = simplify(expand(res))
+    return res
+
 def H_score_onelocal(n, m, D, d, y, r):
     res = 0
     for i in range(n):
@@ -34,24 +58,36 @@ def H_score_onelocal(n, m, D, d, y, r):
     res = simplify(expand(res))
     return res
 
-def H_subscore(i, n, m, D, d, y, r):
+def H_max(n, m, delta_max_i, d, y, r):
     res = 0
-    tmp = list(range(n))
-    del tmp[i]
-    possible_parent_sets = powerset(tmp)
-    for J in possible_parent_sets:
-        if len(J) > m: continue 
-        tmp = 1
-        for j in J:
-            tmp *= d[j, i]
-        res += omega(i, J, D) * tmp
+    for i in range(n):
+        di = np.sum(d[:,i]) - d[i, i]
+        res += delta_max_i[i] * \
+            ((m - di - (y[i, 0] + 2*y[i, 1])) ** 2)
     res = simplify(expand(res))
     return res
 
-def H_score(n, m, D, d, y, r):
+def H_cons(n, delta_cons_ij, d, y, r):
     res = 0
-    for i in range(n):
-        res += H_subscore(i, n, m, D, d, y, r)
+    for i in range(n-1):
+        for j in range(i+1, n):
+            idx = int(i*(n - 1) - i*(i+1)/2 + j - 1)
+            res += delta_cons_ij[i, j] * \
+            (d[i,j] * r[idx] + d[j,i] * (1 - r[idx]))
+    res = simplify(expand(res))
+    return res
+
+def H_trans(n, delta_trans_ijk, d, y, r):
+    res = 0
+    for i in range(n-2):
+        for j in range(i+1, n-1):
+            idx_ij = int(i*(n-1) - i*(i+1)/2 + j - 1)
+            for k in range(j+1, n):
+                idx_ik = int(i*(n-1) - i*(i+1)/2 + k - 1)
+                idx_jk = int(j*(n-1) - j*(j+1)/2 + k - 1)
+                res += delta_trans_ijk[i, j, k] * \
+                    (r[idx_ik] + r[idx_ij] * r[idx_jk] \
+                      - r[idx_ij]*r[idx_ik] - r[idx_jk]*r[idx_ik])
     res = simplify(expand(res))
     return res
 
@@ -93,12 +129,6 @@ def generate_delta(Delta_ji):
     for i in range(n):
         delta_max_i[i] = max(Delta_ji[i, j] for j in range(n) if j != i)
 
-    # Calculate delta_consist for each pair (i, j)
-    for i in range(n):
-        for j in range(n):
-            if i != j:
-                delta_consist_ij[i, j] = (n - 2) * max(Delta_ji[i, k] for k in range(n) if k != i and k != j)
-
     # Calculate delta_trans for each triplet (i, j, k)
     # Given delta_trans_ijk = delta_trans > max Delta_ij' for all i != j'
     # We interpret this as delta_trans_ijk being a constant value for all i, j, k
@@ -113,40 +143,14 @@ def generate_delta(Delta_ji):
                 if i < j < k:
                     delta_trans_ijk[i, j, k] = delta_trans
 
-    return delta_max_i, delta_consist_ij, delta_trans_ijk
-    
-def H_max(n, m, delta_max, d, y, r):
-    res = 0
+    # Calculate delta_consist for each pair (i, j)
     for i in range(n):
-        di = np.sum(d[:,i]) - d[i, i]
-        res += delta_max * \
-            ((m - di - (y[i, 0] + 2*y[i, 1])) ** 2)
-    res = simplify(expand(res))
-    return res
+        for j in range(n):
+            if i < j:
+                if n > 2:
+                    delta_consist_ij[i, j] = (n - 2) * max(delta_trans_ijk[i, j, k] for k in range(n) if k != i and k != j)
 
-def H_cons(n, delta_cons, d, y, r):
-    res = 0
-    for i in range(n-1):
-        for j in range(i+1, n):
-            idx = int(i*(n - 1) - i*(i+1)/2 + j - 1)
-            res += delta_cons * \
-            (d[i,j] * r[idx] + d[j,i] * (1 - r[idx]))
-    res = simplify(expand(res))
-    return res
-
-def H_trans(n, delta_trans, d, y, r):
-    res = 0
-    for i in range(n-2):
-        for j in range(i+1, n-1):
-            idx_ij = int(i*(n-1) - i*(i+1)/2 + j - 1)
-            for k in range(j+1, n):
-                idx_ik = int(i*(n-1) - i*(i+1)/2 + k - 1)
-                idx_jk = int(j*(n-1) - j*(j+1)/2 + k - 1)
-                res += delta_trans * \
-                    (r[idx_ik] + r[idx_ij] * r[idx_jk] \
-                      - r[idx_ij]*r[idx_ik] - r[idx_jk]*r[idx_ik])
-    res = simplify(expand(res))
-    return res
+    return delta_max_i, delta_consist_ij, delta_trans_ijk
 
 def num_to_symbol(num, n, d, y, r):
     if num < n*(n-1) :
@@ -162,7 +166,6 @@ def num_to_symbol(num, n, d, y, r):
         i = int(num / 2)
         j = num % 2
         return y[i, j]
-
 
 def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal):
     # one local is true == use approx H_score
