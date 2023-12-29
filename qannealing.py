@@ -10,12 +10,15 @@ def At(t, T):
 def Bt(t, T):
     return t/T
 
-def annealing(n, M, h, J, T, lamda):
+def annealing(n, M, h, J, T, lamda, use_y = True):
     d_qr = QuantumRegister(n*(n-1))
     r_qr = QuantumRegister(n*(n-1)/2)
-    y_qr = QuantumRegister(2*n)
-    N = int(3*n*(n-1) / 2 + 2*n)
-    circ = QuantumCircuit(d_qr, r_qr, y_qr)
+    if use_y:
+        y_qr = QuantumRegister(2*n)
+    N = int(3*n*(n-1) / 2 )
+    if use_y:
+        N += 2 * n
+    circ = QuantumCircuit(d_qr, r_qr, y_qr) if use_y else QuantumCircuit(d_qr, r_qr)
     circ.h(range(N))
     dt = T / M
     t = 0

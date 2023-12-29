@@ -1,6 +1,6 @@
 from qiskit import transpile
 from qiskit_aer import AerSimulator
-from hamiltonian import hamiltonian_para
+from hamiltonian import hamiltonian_para, plot
 from qannealing import annealing
 from data_score import Generate_Data
 import heapq
@@ -11,28 +11,30 @@ import numpy as np
 M = 100
 T = 10
 lamda = 1
-n = 5
+n = 4
 m = 3
 delta_max = 90
 delta_cons = 90
 delta_trans = 90
 
 show_BF = False
-onelocal = False
+onelocal = True
+use_y = True
 
 D = Generate_Data(n)
-C, h, J = hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal)
+C, h, J = hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal, use_y)
 print(h)
 print(J)
 
 
-circ = annealing(n, M, h, J, T, lamda)
+circ = annealing(n, M, h, J, T, lamda, use_y)
 
 print('the circuit is constructed, simulating...')
 
 simulator = AerSimulator()
 compiled_circuit = transpile(circ, simulator)
-job = simulator.run(compiled_circuit, shots = 1000)
+
+job = simulator.run(compiled_circuit, shots = 10000)
 res = job.result()
 counts = res.get_counts(compiled_circuit)
 

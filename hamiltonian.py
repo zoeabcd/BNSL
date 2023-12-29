@@ -40,7 +40,7 @@ def H_subscore_onelocal(i, n, m, D, d, y, r):
     possible_parent_sets = powerset(tmp)
     for J in possible_parent_sets:
         if len(J) > m: continue
-        res += subscore(i, J, D) * ((n - 1) / 2 - dist(i, n, J, d))
+        res += subscore(i, J, D) * ((n - dist(i, n, J, d)) / n) ** 2
     res = simplify(expand(res))
     return res
 
@@ -59,6 +59,8 @@ def H_score_onelocal(n, m, D, d, y, r):
     return res
 
 def H_max(n, m, delta_max_i, d, y, r):
+    if y is None:
+        return 0
     res = 0
     for i in range(n):
         di = np.sum(d[:,i]) - d[i, i]
@@ -169,10 +171,13 @@ def num_to_symbol(num, n, d, y, r):
         j = num % 2
         return y[i, j]
 
-def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal):
+
+def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal, use_y = True):
     # one local is true == use approx H_score
     d = MatrixSymbol("d", n, n)
-    y = MatrixSymbol("y", n, 2)
+    y = None
+    if use_y:
+        y = MatrixSymbol("y", n, 2)
     r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
 
     if onelocal:
@@ -189,14 +194,17 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
         for j in range(n):
             res = res.subs({d[i, j] ** 2 : d[i, j]})
 
-    for i in range(n):
-        for j in range(2):
-            res = res.subs({y[i, j] ** 2 : y[i, j]})
+    if use_y:
+        for i in range(n):
+            for j in range(2):
+                res = res.subs({y[i, j] ** 2 : y[i, j]})
 
     res = simplify(expand(res))
     
 
-    N = int(3*n*(n-1)/2 + 2*n)
+    N = int(3*n*(n-1)/2 )
+    if use_y:
+        N += 2 * n
 
     if show_BF:
         print("Before spin transformation:", res)
@@ -215,9 +223,10 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
         for j in range(n):
             res = res.subs({d[i, j] : (d[i, j]+1)/2})
 
-    for i in range(n):
-        for j in range(2):
-            res = res.subs({y[i, j] : (y[i, j]+1)/2})
+    if use_y:
+        for i in range(n):
+            for j in range(2):
+                res = res.subs({y[i, j] : (y[i, j]+1)/2})
 
     for i in range(int(n*(n-1)/2)):
         res = res.subs({r[i] : (r[i]+1)/2})
@@ -228,7 +237,9 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
     h = np.zeros(N)
     J = np.zeros((N, N))
 
-    tmp = res.subs({y : ZeroMatrix(n, 2)})
+    tmp = res
+    if use_y:
+        tmp = res.subs({y : ZeroMatrix(n, 2)})
     tmp = tmp.subs({d : ZeroMatrix(n, n)})
     tmp = tmp.subs({r : ZeroMatrix(int(n*(n-1)/2), 1)})
     tmp = simplify(expand(tmp))
@@ -240,7 +251,8 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
         tmp = tmp[::-1]
         if(len(tmp) >= 2):
             tmp = tmp[1]
-            tmp = tmp.subs({y : ZeroMatrix(n, 2)})
+            if use_y:
+                tmp = tmp.subs({y : ZeroMatrix(n, 2)})
             tmp = tmp.subs({d : ZeroMatrix(n, n)})
             tmp = tmp.subs({r : ZeroMatrix(int(n*(n-1)/2), 1)})
             tmp = simplify(expand(tmp))
@@ -258,10 +270,66 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
                 tmp = tmp[::-1]
                 if(len(tmp) >= 2):
                     tmp = tmp[1]
-                    tmp = tmp.subs({y : ZeroMatrix(n, 2)})
+                    if use_y:
+                        tmp = tmp.subs({y : ZeroMatrix(n, 2)})
                     tmp = tmp.subs({d : ZeroMatrix(n, n)})
                     tmp = tmp.subs({r : ZeroMatrix(int(n*(n-1)/2), 1)})
                     tmp = simplify(expand(tmp))
                     J[i,j] = tmp
     
     return C,h,J
+
+
+
+# This function generates all n bit Gray 
+# codes and prints the generated codes
+def generateGrayarr(n):
+    # base case
+    if (n <= 0):
+        return
+ 
+    # 'arr' will store all generated codes
+    arr = list()
+ 
+    # start with one-bit pattern
+    arr.append("0")
+    arr.append("1")
+ 
+    # Every iteration of this loop generates 
+    # 2*i codes from previously generated i codes.
+    i = 2
+    j = 0
+    while(True):
+        if i >= 1 << n:
+            break
+        # Enter the previously generated codes 
+        # again in arr[] in reverse order. 
+        # Nor arr[] has double number of codes.
+        for j in range(i - 1, -1, -1):
+            arr.append(arr[j])
+ 
+        # append 0 to the first half
+        for j in range(i):
+            arr[j] = "0" + arr[j]
+ 
+        # append 1 to the second half
+        for j in range(i, 2 * i):
+            arr[j] = "1" + arr[j]
+        i = i << 1
+
+    return arr
+
+def plot(n, m, D):
+    d = MatrixSymbol("d", n, n)
+    y = MatrixSymbol("y", n, 2)
+    r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
+    res = H_score_onelocal(n, m, D, d, y, r)
+    res = simplify(expand(res))
+    
+    gray = generateGrayarr(n * (n-1))
+    for x in gray:
+        res2 = res.copy()
+        for i, j in enumerate(x):
+            j = 0 if j == '0' else 1
+            res2 = res2.subs({num_to_symbol(i, n, d, y, r): j})
+        print(x, float(res2))
