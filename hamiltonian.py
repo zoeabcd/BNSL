@@ -16,7 +16,7 @@ def dist(i, n, J, d):
             res -= (1 - d[j, i])
     return res
 
-def H_subscore(i, n, m, D, d, y, r):
+def H_subscore_onelocal(i, n, m, D, d, y, r):
     res = 0
     tmp = list(range(n))
     del tmp[i]
@@ -24,11 +24,27 @@ def H_subscore(i, n, m, D, d, y, r):
     for J in possible_parent_sets:
         if len(J) > m: continue
         res += subscore(i, J, D) * ((n - 1) / 2 - dist(i, n, J, d))
-        # if len(J) > m: continue 
-        # tmp = 1
-        # for j in J:
-        #     tmp *= d[j, i]
-        # res += omega(i, J, D) * tmp
+    res = simplify(expand(res))
+    return res
+
+def H_score_onelocal(n, m, D, d, y, r):
+    res = 0
+    for i in range(n):
+        res += H_subscore_onelocal(i, n, m, D, d, y, r)
+    res = simplify(expand(res))
+    return res
+
+def H_subscore(i, n, m, D, d, y, r):
+    res = 0
+    tmp = list(range(n))
+    del tmp[i]
+    possible_parent_sets = powerset(tmp)
+    for J in possible_parent_sets:
+        if len(J) > m: continue 
+        tmp = 1
+        for j in J:
+            tmp *= d[j, i]
+        res += omega(i, J, D) * tmp
     res = simplify(expand(res))
     return res
 
@@ -88,13 +104,18 @@ def num_to_symbol(num, n, d, y, r):
         return y[i, j]
 
 
-def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
+def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal):
+    # one local is true == use approx H_score
     d = MatrixSymbol("d", n, n)
     y = MatrixSymbol("y", n, 2)
     r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
 
-    res =   H_score(n, m, D, d, y, r) + \
-            H_max(n, m, delta_max, d, y, r) + \
+    if onelocal:
+        res =  H_score_onelocal(n, m, D, d, y, r)
+    else:
+        res =  H_score(n, m, D, d, y, r)
+
+    res =   H_max(n, m, delta_max, d, y, r) + \
             H_cons(n, delta_cons, d, y, r) + \
             H_trans(n, delta_trans, d, y, r)
     res = simplify(expand(res))
@@ -108,20 +129,22 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans):
             res = res.subs({y[i, j] ** 2 : y[i, j]})
 
     res = simplify(expand(res))
-    print("Before spin transformation:", res)
+    
 
     N = int(3*n*(n-1)/2 + 2*n)
 
-    bf_results = {}
-    for x in tqdm(range(1 << N)):
-        origx = x
-        res2 = res.copy()
-        for i in range(N):
-            res2 = res2.subs({num_to_symbol(i, n, d, y, r): x & 1})
-            x >>= 1
-        res2 = simplify(expand(res2))
-        bf_results["{:07b}".format(origx)] = float(res2)
-    print("Brute force results:", dict(heapq.nsmallest(5, bf_results.items(), key=itemgetter(1))))
+    if show_BF:
+        print("Before spin transformation:", res)
+        bf_results = {}
+        for x in tqdm(range(1 << N)):
+            origx = x
+            res2 = res.copy()
+            for i in range(N):
+                res2 = res2.subs({num_to_symbol(i, n, d, y, r): x & 1})
+                x >>= 1
+            res2 = simplify(expand(res2))
+            bf_results["{:07b}".format(origx)] = float(res2)
+        print("Brute force results:", dict(heapq.nsmallest(5, bf_results.items(), key=itemgetter(1))))
 
     for i in range(n):
         for j in range(n):

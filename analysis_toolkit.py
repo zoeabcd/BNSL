@@ -67,12 +67,22 @@ def res_extractor(res, n, m):
         if i_parent_num + slack != m:
             is_legal = False
             break
-    
-    return d, r, y, G, \
-        is_cons, is_dag, is_legal
+    return d, r, y, is_cons, is_dag, is_legal, G
 
-def draw_graph(G):
+def res_draw(d, r, y, is_cons, is_dag, is_legal, G):
+    if d == None:
+        print('no available results')
+        return
     pos = nx.spring_layout(G)
     node_labels = nx.get_node_attributes(G, 'desc')
     nx.draw_networkx(G, pos = pos, with_labels=None)
     nx.draw_networkx_labels(G, pos, node_labels)
+    
+    print('the optimal ans is ', d, r, y)
+    if not is_cons:
+        print('There is mutual connection between two nodes or some r_ij is wrong. ')
+    if not is_dag:
+        print('Not a DAG. ')
+    if not is_legal:
+        print('some indegree of nodes is larger than m.')
+    

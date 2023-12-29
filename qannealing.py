@@ -3,7 +3,7 @@ from qiskit.circuit.library import RXGate, RZZGate, RZGate
 from qiskit_aer import AerSimulator
 from hamiltonian import hamiltonian_para
 from data_score import Generate_Data, score
-
+from tqdm import tqdm
 def At(t, T):
     return(1- t/T)
 
