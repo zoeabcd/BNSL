@@ -85,4 +85,18 @@ def res_draw(d, r, y, is_cons, is_dag, is_legal, G):
         print('Not a DAG. ')
     if not is_legal:
         print('some indegree of nodes is larger than m.')
+
+def combinations(l, r):
+    if r == 0:
+        return [[]]
+    if len(l) < r:
+        return []
+    if len(l) == r:
+        return [l]
+    
+    first, rest = l[0], l[1:]
+    combs_with_first = [[first] + comb for comb in combinations(rest, r-1)]
+    combs_without_first = combinations(rest, r)
+    
+    return combs_with_first + combs_without_first
     
