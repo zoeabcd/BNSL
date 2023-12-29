@@ -4,7 +4,6 @@ import numpy as np
 import heapq
 from operator import itemgetter
 from tqdm import tqdm
-import itertools
 
 def dist(i, n, J, d):
     st = set(J)
@@ -108,12 +107,13 @@ def calculate_Delta_ji(n, m, D):
             for j in range(n):
                 sum_ = 0
                 # Generate all subsets of size up to m-2 to ensure |J| < m-1
-                for J in itertools.chain.from_iterable(itertools.combinations(range(n), r) for r in range(m-1)):
-                    # Convert tuple to list and ensure i, j not in J
-                    J = list(J)
-                    if i not in J and j not in J:
-                        # Calculate omega with J union {j}
-                        sum_ += min(0, omega(i, J + [j], D))
+                for r in range(m-1):
+                    for J in combinations(range(n), r):
+                        # Convert tuple to list and ensure i, j not in J
+                        J = list(J)
+                        if i not in J and j not in J:
+                            # Calculate omega with J union {j}
+                            sum_ += min(0, omega(i, J + [j], D))
                 Delta_ji[i, j] = -sum_
     for i in range(n):
         for j in range(n):
