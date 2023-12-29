@@ -149,6 +149,8 @@ def generate_delta(Delta_ji):
             if i < j:
                 if n > 2:
                     delta_consist_ij[i, j] = (n - 2) * max(delta_trans_ijk[i, j, k] for k in range(n) if k != i and k != j)
+                else:
+                    delta_consist_ij[i, j] = delta_trans
 
     return delta_max_i, delta_consist_ij, delta_trans_ijk
 
