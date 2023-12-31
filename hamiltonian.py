@@ -6,6 +6,7 @@ import heapq
 from operator import itemgetter
 from tqdm import tqdm
 import random
+import matplotlib.pyplot as plt
 
 def dist(i, n, J, d):
     st = set(J)
@@ -173,7 +174,7 @@ def num_to_symbol(num, n, d, y, r):
         j = num % 2
         return y[i, j]
 
-def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal, use_y = True):
+def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, onelocal, use_y = True):
     # one local is true == use approx H_score
     d = MatrixSymbol("d", n, n)
     y = None
@@ -182,15 +183,18 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
     r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
 
     if onelocal:
-        res =  H_score_onelocal(n, m, D, d, y, r)
+        res = H_score_onelocal(n, m, D, d, y, r)
     else:
-        res =  H_score(n, m, D, d, y, r)
+        res = H_score(n, m, D, d, y, r)
 
-    res +=   H_max(n, m, delta_max, d, y, r) + \
-            H_cons(n, delta_cons, d, y, r) + \
-            H_trans(n, delta_trans, d, y, r)
+    res += H_max(n, m, delta_max, d, y, r) + \
+        H_cons(n, delta_cons, d, y, r) + \
+        H_trans(n, delta_trans, d, y, r)
     res = simplify(expand(res))
 
+    return expr_to_quadratic(res, n, d, y, r, use_y)
+
+def expr_to_quadratic(res, n, d, y, r, use_y):
     for i in range(n):
         for j in range(n):
             res = res.subs({d[i, j] ** 2 : d[i, j]})
@@ -200,26 +204,9 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
             for j in range(2):
                 res = res.subs({y[i, j] ** 2 : y[i, j]})
 
-    res = simplify(expand(res))
-    print(res)
-    
-
     N = int(3*n*(n-1)/2 )
     if use_y:
         N += 2 * n
-
-    if show_BF:
-        print("Before spin transformation:", res)
-        bf_results = {}
-        for x in tqdm(range(1 << N)):
-            origx = x
-            res2 = res.copy()
-            for i in range(N):
-                res2 = res2.subs({num_to_symbol(i, n, d, y, r): x & 1})
-                x >>= 1
-            res2 = simplify(expand(res2))
-            bf_results["{:07b}".format(origx)] = float(res2)
-        print("Brute force results:", dict(heapq.nsmallest(5, bf_results.items(), key=itemgetter(1))))
 
     for i in range(n):
         for j in range(n):
@@ -348,8 +335,34 @@ def plot(n, m, D):
             res2 = res2.subs({num_to_symbol(i, n, d, y, r): j})
         print(x, float(res2))
 
-def bf(C, h, J):
+def distance(n, strA, strB):
+    if len(strA) < n:
+        strA = '0' * (n - len(strA)) + strA
+    if len(strB) < n:
+        strB = '0' * (n - len(strB)) + strB
+    cnt = 0
+    for i in range(n):
+        if strA[i] != strB[i]:
+            cnt += 1
+    return cnt
+
+# Pass dlen = n * (n - 1) to sort by DAG distance (only count bits in d for distance)
+# Do not pass dlen to sort by bit distance (count all bits)
+def bf(C, h, J, dlen = None):
+    if dlen is None:
+        dlen = len(h)
     values = np.zeros((len(h),))
+    
+    ## To test a bunch of values
+    #
+    # for s, _ in tests:
+    #     if len(s) < len(h):
+    #         s = '0' * (len(h) - len(s)) + s
+    #     for i in range(len(s)):
+    #         values[len(h) - 1 - i] = -1 if s[i] == '0' else 1
+    #     value = C + np.inner(h, values) + values.T @ J @ values
+    #     print(value)
+
     bf_results = {}
     for x in tqdm(range(1 << len(h))):
         orig_x = x
@@ -358,4 +371,39 @@ def bf(C, h, J):
             x >>= 1
         value = C + np.inner(h, values) + values.T @ J @ values
         bf_results["{:b}".format(orig_x)] = float(value)
-    print("Brute force results:", dict(heapq.nsmallest(10, bf_results.items(), key=itemgetter(1))))
+    best_values = heapq.nsmallest(30, bf_results.items(), key=itemgetter(1))
+    print("Brute force results:", best_values)
+
+    minim = [1e9] * (dlen + 1)
+    for x in tqdm(range(1 << len(h))):
+        cur = "{:b}".format(x)
+        dist = distance(dlen, cur[:dlen], best_values[0][0][:dlen])
+        minim[dist] = min(minim[dist], bf_results[cur])
+
+    plt.bar(list(range(dlen + 1)), np.array(minim) - best_values[0][1])
+    plt.show()
+
+# def topological_order(d):
+#     degree = np.sum(d, axis=0)
+#     r = []
+#     order = np.zeros((len(d),))
+#     while len(r) < len(d):
+#         found = False
+#         for i, val in enumerate(degree):
+#             if val == 0:
+#                 found = True
+#                 degree[i] = -1
+#                 order[i] = len(r)
+#                 r.append(i)
+#                 for j in range(len(d)):
+#                     if d[i, j] == 1:
+#                         degree[j] -= 1
+#         if not found and len(r) < len(d):
+#             return None
+#     out = np.zeros((len(d), len(d)))
+#     for i in range(len(d)):
+#         for j in range(len(d)):
+#             if order[i] > order[j]:
+#                 r[i, j] = 1
+#     return r
+
