@@ -281,22 +281,10 @@ def stochastic_normalize(h, J, samples=100):
     print(factor)
     return h / factor, J / factor
 
-def distance(n, strA, strB):
-    if len(strA) < n:
-        strA = '0' * (n - len(strA)) + strA
-    if len(strB) < n:
-        strB = '0' * (n - len(strB)) + strB
-    cnt = 0
-    for i in range(n):
-        if strA[i] != strB[i]:
-            cnt += 1
-    return cnt
 
-# Pass dlen = n * (n - 1) to sort by DAG distance (only count bits in d for distance)
-# Do not pass dlen to sort by bit distance (count all bits)
-def bf(C, h, J, dlen = None):
-    if dlen is None:
-        dlen = len(h)
+
+def bf(C, h, J, n, dagDist = False):
+    dlen = n * (n-1) if dagDist else len(h) 
     values = np.zeros((len(h),))
     
     ## To test a bunch of values
@@ -320,13 +308,67 @@ def bf(C, h, J, dlen = None):
     best_values = heapq.nsmallest(30, bf_results.items(), key=itemgetter(1))
     print("Brute force results:", best_values)
 
-    minim = [1e9] * (dlen + 1)
+    def distance(strA, strB):
+        if len(strA) < dlen:
+            strA = '0' * (dlen - len(strA)) + strA
+        if len(strB) < dlen:
+            strB = '0' * (dlen - len(strB)) + strB
+        cnt = 0
+        for i in range(dlen):
+            if strA[i] != strB[i]:
+                cnt += 1
+        return cnt
+
+    def check_consistent(x, quiet=True):
+        if len(x) < len(h):
+            x = '0' * (len(h) - len(x)) + x
+        x = x[::-1]
+        d = np.zeros((n, n))
+        r = np.zeros((n, n))
+        idx = 0
+        for i in range(n):
+            for k in range(n-1):
+                j = k + 1 if k >= i else k
+                d[i, j] = 1 if x[idx] == '1' else 0
+                idx += 1
+        for i in range(n-1):
+            for j in range(i+1, n):
+                r[i, j] = 1 if x[idx] == '1' else 0
+                idx += 1
+        for i in range(n):
+            for j in range(i+1,n):
+                if d[i, j] == 1 and r[i, j] == 1:
+                    return False
+                if d[j, i] == 1 and r[i, j] == 0:
+                    return False
+        for i in range(n-2):
+            for j in range(i+1, n-1):
+                for k in range(j+1, n):
+                    if r[i, k] + r[i, j] * r[j, k] - r[i, j] * r[i, k] - r[j, k] * r[i, k] > 0:
+                        return False
+        return True
+    if not check_consistent(best_values[0][0]):
+        print("Brute force best is not consistent!")
+        exit(1)
+
+    values = [list() for _ in range(dlen + 1)] 
     for x in tqdm(range(1 << len(h))):
         cur = "{:b}".format(x)
-        dist = distance(dlen, cur[:dlen], best_values[0][0][:dlen])
-        minim[dist] = min(minim[dist], bf_results[cur])
+        dist = distance(cur[-dlen:], best_values[0][0][-dlen:])
+        if dagDist and not check_consistent(cur):
+            continue
+        if dist == 0:
+            print(cur, bf_results[cur])
+        values[dist].append(bf_results[cur])
+
+    minim = [np.min(it) if len(it) > 0 else np.nan for it in values]
+    avg = [np.mean(it)  if len(it) > 0 else np.nan  for it in values]
+    std = [np.std(it)  if len(it) > 0 else np.nan  for it in values]
 
     plt.bar(list(range(dlen + 1)), np.array(minim) - best_values[0][1])
+    plt.show()
+
+    plt.bar(list(range(dlen + 1)), np.array(avg) - best_values[0][1], yerr=np.array(std))
     plt.show()
 
 # def topological_order(d):

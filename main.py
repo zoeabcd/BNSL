@@ -14,7 +14,7 @@ lamda = 1
 n = 4
 m = 2
 
-onelocal = False
+onelocal = True
 use_y = False
 
 D = Generate_Data(n)
@@ -23,7 +23,7 @@ delta_max_i, delta_consist_ij, delta_trans_ijk = generate_delta(Delta_ji, 1.5, 5
 print(delta_max_i, delta_consist_ij, delta_trans_ijk)
 C, h, J = hamiltonian_para(n, m, D, delta_max_i, delta_consist_ij, delta_trans_ijk, onelocal, use_y)
 print(C, h, J)
-bf(C, h, J, n * (n - 1))
+bf(C, h, J, n, dagDist=False)
 # h, J = stochastic_normalize(h, J)
 print(h)
 print(J)
