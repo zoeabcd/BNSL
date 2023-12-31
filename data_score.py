@@ -65,7 +65,7 @@ def Generate_Data(n, M = 200):
                         D[idx, 2] = 1
                         if random.uniform(0, 1) > 0.9:
                             D[idx, 3] = 1
-    else:
+    else: 
         for idx in range(M):
             D[idx, 0] = 1
             for k in range(1, n):

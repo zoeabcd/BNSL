@@ -1,6 +1,6 @@
 from qiskit import transpile
 from qiskit_aer import AerSimulator
-from hamiltonian import hamiltonian_para, plot
+from hamiltonian import hamiltonian_para, plot, stochastic_normalize, calculate_Delta_ji, generate_delta
 from qannealing import annealing
 from data_score import Generate_Data
 import heapq
@@ -13,16 +13,17 @@ T = 10
 lamda = 1
 n = 4
 m = 3
-delta_max = 90
-delta_cons = 90
-delta_trans = 90
 
-show_BF = False
-onelocal = True
-use_y = True
+show_BF = True
+onelocal = False
+use_y = False
 
 D = Generate_Data(n)
-C, h, J = hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal, use_y)
+Delta_ji = calculate_Delta_ji(n, m, D)
+delta_max_i, delta_consist_ij, delta_trans_ijk = generate_delta(Delta_ji, 2)
+print(delta_max_i, delta_consist_ij, delta_trans_ijk)
+C, h, J = hamiltonian_para(n, m, D, delta_max_i, delta_consist_ij, delta_trans_ijk, show_BF, onelocal, use_y)
+# h, J = stochastic_normalize(h, J)
 print(h)
 print(J)
 

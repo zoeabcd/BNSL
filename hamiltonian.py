@@ -1,9 +1,11 @@
 from sympy import *
 from data_score import powerset, omega, subscore
+from analysis_toolkit import combinations
 import numpy as np
 import heapq
 from operator import itemgetter
 from tqdm import tqdm
+import random
 
 def dist(i, n, J, d):
     st = set(J)
@@ -120,7 +122,7 @@ def calculate_Delta_ji(n, m, D):
             Delta_ji[i, j] = max(0, Delta_ji[i, j])
     return Delta_ji
 
-def generate_delta(Delta_ji):
+def generate_delta(Delta_ji, factor=1.5, min_value=10):
     # Initialize the delta arrays
     n = Delta_ji.shape[0]
     delta_max_i = np.zeros(n)
@@ -154,7 +156,9 @@ def generate_delta(Delta_ji):
                 else:
                     delta_consist_ij[i, j] = delta_trans
 
-    return delta_max_i, delta_consist_ij, delta_trans_ijk
+    return np.maximum(factor * delta_max_i, min_value), \
+            np.maximum(factor * delta_consist_ij, min_value),\
+            np.maximum(factor * delta_trans_ijk, min_value)
 
 def num_to_symbol(num, n, d, y, r):
     if num < n*(n-1) :
@@ -279,6 +283,18 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
     
     return C,h,J
 
+def stochastic_normalize(h, J, samples=100):
+    results = []
+    for _ in range(samples):
+        x = random.randrange(1 << len(h))
+        values = np.zeros((len(h), ))
+        for i in range(len(h)):
+            values[i] = -1 if x & 1 != 0 else 1
+            x >>= 1
+        results.append(np.abs(np.inner(values, h) + values.T @ J @ values))
+    factor = np.std(results, ddof=1) / np.sqrt(len(h))
+    print(factor)
+    return h / factor, J / factor
 
 
 # This function generates all n bit Gray 
