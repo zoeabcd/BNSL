@@ -189,7 +189,7 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
     else:
         res =  H_score(n, m, D, d, y, r)
 
-    res =   H_max(n, m, delta_max, d, y, r) + \
+    res +=   H_max(n, m, delta_max, d, y, r) + \
             H_cons(n, delta_cons, d, y, r) + \
             H_trans(n, delta_trans, d, y, r)
     res = simplify(expand(res))
