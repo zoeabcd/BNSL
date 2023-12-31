@@ -24,13 +24,11 @@ def H_subscore(i, n, m, D, d, y, r):
     del tmp[i]
     possible_parent_sets = powerset(tmp)
     for J in possible_parent_sets:
-        if len(J) > m: continue
-        res += subscore(i, J, D) * ((n - 1) / 2 - dist(i, n, J, d))
-        # if len(J) > m: continue 
-        # tmp = 1
-        # for j in J:
-        #     tmp *= d[j, i]
-        # res += omega(i, J, D) * tmp
+        if len(J) > m: continue 
+        tmp = 1
+        for j in J:
+            tmp *= d[j, i]
+        res += omega(i, J, D) * tmp
     res = simplify(expand(res))
     return res
 
@@ -175,7 +173,6 @@ def num_to_symbol(num, n, d, y, r):
         j = num % 2
         return y[i, j]
 
-
 def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelocal, use_y = True):
     # one local is true == use approx H_score
     d = MatrixSymbol("d", n, n)
@@ -204,6 +201,7 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, show_BF, onelo
                 res = res.subs({y[i, j] ** 2 : y[i, j]})
 
     res = simplify(expand(res))
+    print(res)
     
 
     N = int(3*n*(n-1)/2 )
@@ -349,3 +347,15 @@ def plot(n, m, D):
             j = 0 if j == '0' else 1
             res2 = res2.subs({num_to_symbol(i, n, d, y, r): j})
         print(x, float(res2))
+
+def bf(C, h, J):
+    values = np.zeros((len(h),))
+    bf_results = {}
+    for x in tqdm(range(1 << len(h))):
+        orig_x = x
+        for i in range(len(h)):
+            values[i] = -1 if x & 1 == 0 else 1
+            x >>= 1
+        value = C + np.inner(h, values) + values.T @ J @ values
+        bf_results["{:b}".format(orig_x)] = float(value)
+    print("Brute force results:", dict(heapq.nsmallest(10, bf_results.items(), key=itemgetter(1))))
