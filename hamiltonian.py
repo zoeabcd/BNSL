@@ -281,60 +281,6 @@ def stochastic_normalize(h, J, samples=100):
     print(factor)
     return h / factor, J / factor
 
-
-# This function generates all n bit Gray 
-# codes and prints the generated codes
-def generateGrayarr(n):
-    # base case
-    if (n <= 0):
-        return
- 
-    # 'arr' will store all generated codes
-    arr = list()
- 
-    # start with one-bit pattern
-    arr.append("0")
-    arr.append("1")
- 
-    # Every iteration of this loop generates 
-    # 2*i codes from previously generated i codes.
-    i = 2
-    j = 0
-    while(True):
-        if i >= 1 << n:
-            break
-        # Enter the previously generated codes 
-        # again in arr[] in reverse order. 
-        # Nor arr[] has double number of codes.
-        for j in range(i - 1, -1, -1):
-            arr.append(arr[j])
- 
-        # append 0 to the first half
-        for j in range(i):
-            arr[j] = "0" + arr[j]
- 
-        # append 1 to the second half
-        for j in range(i, 2 * i):
-            arr[j] = "1" + arr[j]
-        i = i << 1
-
-    return arr
-
-def plot(n, m, D):
-    d = MatrixSymbol("d", n, n)
-    y = MatrixSymbol("y", n, 2)
-    r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
-    res = H_score_onelocal(n, m, D, d, y, r)
-    res = simplify(expand(res))
-    
-    gray = generateGrayarr(n * (n-1))
-    for x in gray:
-        res2 = res.copy()
-        for i, j in enumerate(x):
-            j = 0 if j == '0' else 1
-            res2 = res2.subs({num_to_symbol(i, n, d, y, r): j})
-        print(x, float(res2))
-
 def distance(n, strA, strB):
     if len(strA) < n:
         strA = '0' * (n - len(strA)) + strA
