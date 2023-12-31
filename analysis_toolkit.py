@@ -1,9 +1,11 @@
 import networkx as nx
-def res_extractor(res, n, m):
+def res_extractor(res, n, m, use_y = True):
     # given res as the measurements of QA, n,m return d,y,r and a DiGraph G, which could be plotted by draw_graph
     # is_cons, is_dag, is_legal are boolean variables.
 
-    if len(res) != int(n*(n-1)*3/2 + 2*n):
+    if len(res) != int(n*(n-1)*3/2 + 2*n) and use_y:
+        return None
+    elif len(res) != int(n*(n-1)*3/2) and ~use_y:
         return None
     
     # Notice that '0' in res means positive flip +1 and is correspond to 1 as variables.
@@ -13,9 +15,8 @@ def res_extractor(res, n, m):
 
     d = res[:int(n*(n-1))]
     r = res[int(n*(n-1)): int(n*(n-1)*3/2)]
-    y = res[int(n*(n-1)*3/2):]
 
-    is_cons = True 
+    is_cons = True
         # no two nodes are mutual connected and r_ij = 0 iff x_i > x_j in topo. order
     is_dag = True
         # check r_ij s.t. x_i > x_k > x_j > x_i
@@ -58,18 +59,21 @@ def res_extractor(res, n, m):
                     is_dag = False
                     break
     
-    for i in range(n):
-        i_parent_num = 0
-        for x in edge_list:
-            if x[1] == i:
-                i_parent_num += 1
-        slack = 2*y[2*i + 1] + y[2*i]
-        if i_parent_num + slack != m:
-            is_legal = False
-            break
+    y = -1
+    if use_y:
+        y = res[int(n*(n-1)*3/2):]
+        for i in range(n):
+            i_parent_num = 0
+            for x in edge_list:
+                if x[1] == i:
+                    i_parent_num += 1
+            slack = 2*y[2*i + 1] + y[2*i]
+            if i_parent_num + slack != m:
+                is_legal = False
+                break
     return d, r, y, is_cons, is_dag, is_legal, G
 
-def res_draw(d, r, y, is_cons, is_dag, is_legal, G):
+def res_draw(d, r, y, is_cons, is_dag, is_legal, G, use_y = True):
     if d == None:
         print('no available results')
         return
@@ -78,12 +82,15 @@ def res_draw(d, r, y, is_cons, is_dag, is_legal, G):
     nx.draw_networkx(G, pos = pos, with_labels=None)
     nx.draw_networkx_labels(G, pos, node_labels)
     
-    print('the optimal ans is ', d, r, y)
+    if use_y:
+        print('the optimal ans is ', d, r, y)
+    else:
+        print('the optimal ans is ', d, r)
     if not is_cons:
         print('There is mutual connection between two nodes or some r_ij is wrong. ')
     if not is_dag:
         print('Not a DAG. ')
-    if not is_legal:
+    if not is_legal and use_y:
         print('some indegree of nodes is larger than m.')
 
 def combinations(l, r):
