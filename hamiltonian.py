@@ -33,14 +33,13 @@ def H_subscore(i, n, m, D, d, y, r):
     res = simplify(expand(res))
     return res
 
-def H_subscore_onelocal(i, n, m, D, d, y, r):
+def H_subscore_local(i, n, m, D, d, y, r, locality):
     res = 0
     tmp = list(range(n))
     del tmp[i]
     possible_parent_sets = powerset(tmp)
     for J in possible_parent_sets:
-        if len(J) > m: continue
-        res += subscore(i, J, D) * ((n - dist(i, n, J, d)) / n) ** 2
+        res += subscore(i, J, D) * ((n - dist(i, n, J, d)) / n) ** locality
     res = simplify(expand(res))
     return res
 
@@ -51,10 +50,10 @@ def H_score(n, m, D, d, y, r):
     res = simplify(expand(res))
     return res
 
-def H_score_onelocal(n, m, D, d, y, r):
+def H_score_local(n, m, D, d, y, r, locality):
     res = 0
     for i in range(n):
-        res += H_subscore_onelocal(i, n, m, D, d, y, r)
+        res += H_subscore_local(i, n, m, D, d, y, r, locality)
     res = simplify(expand(res))
     return res
 
@@ -90,6 +89,15 @@ def H_trans(n, delta_trans_ijk, d, y, r):
                 res += delta_trans_ijk[i, j, k] * \
                     (r[idx_ik] + r[idx_ij] * r[idx_jk] \
                       - r[idx_ij]*r[idx_ik] - r[idx_jk]*r[idx_ik])
+    res = simplify(expand(res))
+    return res
+
+def H_norm(n, delta_norm, d, y, r):
+    res = 0
+    for i in range(n):
+        for j in range(n):
+            if j != i:
+                res += d[i, j] * delta_norm
     res = simplify(expand(res))
     return res
 
@@ -174,7 +182,7 @@ def num_to_symbol(num, n, d, y, r):
         j = num % 2
         return y[i, j]
 
-def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, onelocal, use_y = True):
+def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, delta_norm, locality = None, use_y = True):
     # one local is true == use approx H_score
     d = MatrixSymbol("d", n, n)
     y = None
@@ -182,14 +190,15 @@ def hamiltonian_para(n, m, D, delta_max, delta_cons, delta_trans, onelocal, use_
         y = MatrixSymbol("y", n, 2)
     r = MatrixSymbol("r", int(n*(n-1)/2), 1) # only up-right 
 
-    if onelocal:
-        res = H_score_onelocal(n, m, D, d, y, r)
-    else:
+    if locality is None:
         res = H_score(n, m, D, d, y, r)
+    else:
+        res = H_score_local(n, m, D, d, y, r, locality)
 
     res += H_max(n, m, delta_max, d, y, r) + \
         H_cons(n, delta_cons, d, y, r) + \
-        H_trans(n, delta_trans, d, y, r)
+        H_trans(n, delta_trans, d, y, r) + \
+        H_norm(n, delta_norm, d, y, r)
     res = simplify(expand(res))
 
     return expr_to_quadratic(res, n, d, y, r, use_y)
