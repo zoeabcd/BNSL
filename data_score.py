@@ -55,8 +55,7 @@ def Read_Data(txtname, n):
     
 
 
-
-def Generate_Data(n, M = 200):
+def Generate_Data(n, M = 200, alternative = False):
     # M = # of samples
     D = np.zeros((M, n))
     if n == 3:
@@ -74,15 +73,27 @@ def Generate_Data(n, M = 200):
                 if random.uniform(0, 1) > 0.5:
                         D[idx, 1] = 1
     elif n == 4:
-        for idx in range(M):
-            if random.uniform(0, 1) > 0.5:
-                D[idx, 0] = 1
-                if random.uniform(0, 1) > 0.9:
-                    D[idx, 1] = 1
-                    if random.uniform(0, 1) > 0.9:
+        if alternative:
+            for idx in range(M):
+                if random.uniform(0, 1) > 0.8:
+                    D[idx, 0] = 1
+                    if random.uniform(0, 1) > 0.8:
+                        D[idx, 1] = 1
+                        if random.uniform(0, 1) > 0.8:
+                            D[idx, 2] = 1
+                            if random.uniform(0, 1) > 0.8:
+                                D[idx, 3] = 1
+        else:
+            for idx in range(M):
+                if random.uniform(0, 1) > 0.7:
+                    D[idx, 0] = 1
+                    if random.uniform(0, 1) > 0.7:
+                        D[idx, 1] = 1
+                    if random.uniform(0, 1) > 0.7:
                         D[idx, 2] = 1
-                        if random.uniform(0, 1) > 0.9:
-                            D[idx, 3] = 1
+                    if random.uniform(0, 1) > 0.7:
+                        D[idx, 3] = 1
+
     else: 
         for idx in range(M):
             D[idx, 0] = 1
