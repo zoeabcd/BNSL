@@ -1,5 +1,6 @@
 import networkx as nx
-def res_extractor(res, n, m, use_y = True):
+import matplotlib.pyplot as plt
+def res_extractor(res, n, m, use_y = True, names = None):
     # given res as the measurements of QA, n,m return d,y,r and a DiGraph G, which could be plotted by draw_graph
     # is_cons, is_dag, is_legal are boolean variables.
 
@@ -23,8 +24,12 @@ def res_extractor(res, n, m, use_y = True):
         # having at most m indgree and y_i + d_i = m
 
     G = nx.DiGraph()
-    for i in range(n):
-        G.add_node(i, desc='v'+str(i))
+    if names == None:
+        for i in range(n):
+            G.add_node(i, desc='v' + str(i))
+    else:
+        for i in range(n):
+            G.add_node(i, desc=names[i])
     edge_list = []
     
     for i in range(n-1):
@@ -80,6 +85,7 @@ def res_draw(d, r, y, is_cons, is_dag, is_legal, G, use_y = True):
     node_labels = nx.get_node_attributes(G, 'desc')
     nx.draw_networkx(G, pos = pos, with_labels=None)
     nx.draw_networkx_labels(G, pos, node_labels)
+    plt.show()
     
     if use_y:
         print('the optimal ans is ', d, r, y)

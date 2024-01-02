@@ -51,6 +51,10 @@ def Read_Data(txtname, n):
         D[idx,:] = list[0:n]
         idx += 1
     
+    if n == 4:
+        if D[0, 3] == 1:
+            D[1:, 3] = (D[1:, 3] / 60).astype(int)
+    print('data about ', D[0,:], ' is read')
     return D[1:, :]
     
 
