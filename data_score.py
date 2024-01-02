@@ -38,6 +38,24 @@ def score(G, D, n):
         res += subscore(i, K, D)
     return res
 
+def Read_Data(txtname, n):
+    # the first line of the file is the colume idx of features
+    f = open(txtname)
+    line = f.readlines()
+    num_line = len(line)
+
+    D = np.zeros((num_line, n))
+    idx = 0
+    for li in line:
+        list = li.strip('\n').split(' ')
+        D[idx,:] = list[0:n]
+        idx += 1
+    
+    return D[1:, :]
+    
+
+
+
 def Generate_Data(n, M = 200):
     # M = # of samples
     D = np.zeros((M, n))

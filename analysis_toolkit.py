@@ -3,11 +3,10 @@ def res_extractor(res, n, m, use_y = True):
     # given res as the measurements of QA, n,m return d,y,r and a DiGraph G, which could be plotted by draw_graph
     # is_cons, is_dag, is_legal are boolean variables.
 
-    if len(res) != int(n*(n-1)*3/2 + 2*n) and use_y:
-        return None
-    elif len(res) != int(n*(n-1)*3/2) and ~use_y:
-        return None
-    
+    if use_y:
+        if len(res) != int(n*(n-1)*3/2 + 2*n): return None    
+    elif len(res) != int(n*(n-1)*3/2): return None
+        
     # Notice that '0' in res means positive flip +1 and is correspond to 1 as variables.
 
     res = list(res)[::-1]
